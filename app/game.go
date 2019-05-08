@@ -623,15 +623,6 @@ func (g *Game) CheckGameState() {
 
 	logger.Debug("checking game state")
 
-	var blackPlayer, whitePlayer string
-	for player := range g.players() {
-		if player.PlayerColor == Black {
-			blackPlayer = player.Name
-		} else {
-			whitePlayer = player.Name
-		}
-	}
-
 	var err error
 	if g.Model.Outcome() != chess.NoOutcome {
 
@@ -644,12 +635,6 @@ func (g *Game) CheckGameState() {
 			}
 			g.hub.Unregister <- unregisterMessage
 		}
-
-		logger.Debug("sending game data")
-		err = WsSendData(g.id, g.Name, blackPlayer, whitePlayer, g.startTime.String(), outcome, g.Model.String())
-	} else {
-		logger.Debug("sending game data")
-		err = WsSendData(g.id, g.Name, blackPlayer, whitePlayer, g.startTime.String(), "", g.Model.String())
 	}
 
 	if err != nil {
@@ -879,10 +864,6 @@ func (g *Game) startGame() {
 	//} else {
 	//fmt.Println("connected to recorder: " + host)
 	/*}*/
-
-	if !GameSettings.DisableGameRecorder {
-		go WsRun()
-	}
 
 	g.startTime = time.Now()
 }

@@ -10,41 +10,9 @@ services:
         - RECORDER_HOST=172.28.0.3
     ports:
       - "2022:2022"
-    depends_on:
-      - recorder
     networks:
       net:
         ipv4_address: 172.28.0.4
-
-  recorder:
-    container_name: recorder
-    build: 
-      context: .
-      dockerfile: dockerfiles/recorder/Dockerfile
-    environment:
-      - DB_HOST=172.28.0.2
-    depends_on:
-      - db
-    command: ["/usr/bin/wait-for-it.sh", "172.28.0.2:5432", "--", "recorder"]
-    networks:
-      net:
-        ipv4_address: 172.28.0.3
-                            
-  api:
-    container_name: api 
-    build: 
-      context: .
-      dockerfile: dockerfiles/api/Dockerfile
-    environment:
-      - DB_HOST=172.28.0.2
-    ports:
-        - "8080:8080"
-    depends_on:
-      - db
-    command: ["/usr/bin/wait-for-it.sh", "172.28.0.2:5432", "--", "api"]
-    networks:
-      net:
-          ipv4_address: 172.28.0.5
 
   db:
     container_name: db

@@ -91,60 +91,8 @@ func main() {
 
 	sshPort := ":2022"
 
-	//config := &ssh.ServerConfig{
-	//PasswordCallback: func(c ssh.ConnMetadata, pass []byte) (*ssh.Permissions, error) {
-	//u := UserAuth{
-	//UserName: c.User(),
-	//Secret:   string(pass),
-	//}
-	//isValid, err := u.CheckSecret()
-	//if err != nil {
-	//return nil, err
-	//}
-
-	//if !isValid {
-	//return nil, fmt.Errorf("Password rejected for %q", c.User())
-	//} else {
-	//return nil, nil
-	//}
-	//},
-	//}
-
 	config := &ssh.ServerConfig{
-		PasswordCallback: func(c ssh.ConnMetadata, pass []byte) (*ssh.Permissions, error) {
-
-			playerName, _ := getPlayerAndGameName(c.User())
-
-			u := UserAuth{
-				UserName: playerName,
-				Secret:   string(pass),
-			}
-
-			userNameExists, err := u.CheckUserExists()
-			if err != nil {
-				return nil, err
-			}
-
-			logger.Print(fmt.Sprintf("User name exists: %v", userNameExists))
-
-			if userNameExists {
-				isValid, err := u.CheckSecret()
-				if err != nil {
-					return nil, err
-				}
-
-				if !isValid {
-					return nil, fmt.Errorf("Password rejected for %q", c.User())
-				}
-			} else {
-				// create the username
-				_, err := u.CreateNewUser()
-				if err != nil {
-					return nil, err
-				}
-			}
-			return nil, nil
-		},
+		NoClientAuth: true,
 	}
 
 	privateBytes, err := ioutil.ReadFile("id_rsa")
