@@ -12,5 +12,3 @@ ssh-chess is a chess server that runs through the SSH protocol
 - Running `ssh <username>@server -p 2022` will connect a user to a random room
 - Running `ssh <username>#<room-name>@server -p 2022` will connect a user to a named room - use this if you want to play a specific user by giving that user the `room-name` 
 
-## Debug Modes
-1. Run `DEBUG_MODE="singleplayer" go run app/*.go` to run in single player debug mode, this makes it easier to test features
