@@ -15,6 +15,14 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
+type BoardColor int
+
+const (
+	Red BoardColor = iota
+	Green
+	None
+)
+
 const (
 	verticalWall   = '║'
 	horizontalWall = '═'
@@ -97,14 +105,6 @@ func NewUserCreatedGame(worldWidth, worldHeight int, name string) *Game {
 
 	return g
 }
-
-type BoardColor int
-
-const (
-	Red BoardColor = iota
-	Green
-	None
-)
 
 func (g *Game) getColor(p Position, s string) string {
 	g.mutex.RLock()

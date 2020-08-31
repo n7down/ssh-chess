@@ -16,10 +16,10 @@ import (
 // 3 (0,5)  (1,5)  (2,5)  (3,5)  (4,5)  (5,5)  (6,5)  (7,5)
 // 2 (0,6)  (1,6)  (2,6)  (3,6)  (4,6)  (5,6)  (6,6)  (7,6)
 // 1 (0,7)  (1,7)  (2,7)  (3,7)  (4,7)  (5,7)  (6,7)  (7,7)
-func TestPositionToModel(t *testing.T) {
+func Test_PositionToModel_Should_Return_Valid_Model_When_Given_A_Position(t *testing.T) {
 	tables := []struct {
-		position Position
-		model    string
+		position      Position
+		expectedModel string
 	}{
 		{Position{0, 0}, "a8"},
 		{Position{0, 1}, "a7"},
@@ -48,15 +48,15 @@ func TestPositionToModel(t *testing.T) {
 	}
 
 	for _, tt := range tables {
-		actual := tt.position.positionToModel()
-		assert.Equal(t, tt.model, actual, "should be equal")
+		modelActual := tt.position.positionToModel()
+		assert.Equal(t, tt.expectedModel, modelActual, "should be equal")
 	}
 }
 
-func TestModelToPosition(t *testing.T) {
+func Test_ModelToPosition_Should_Return_Valid_Position_When_Given_A_Position(t *testing.T) {
 	tables := []struct {
-		model    string
-		position Position
+		model            string
+		expectedPosition Position
 	}{
 		{"a1", Position{0, 7}},
 		{"a2", Position{0, 6}},
@@ -76,7 +76,7 @@ func TestModelToPosition(t *testing.T) {
 	}
 
 	for _, tt := range tables {
-		actual := modelToPosition(tt.model)
-		assert.True(t, reflect.DeepEqual(tt.position, actual), "should be equal")
+		positionActual := modelToPosition(tt.model)
+		assert.True(t, reflect.DeepEqual(tt.expectedPosition, positionActual), "should be equal")
 	}
 }
