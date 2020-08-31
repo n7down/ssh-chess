@@ -1,12 +1,14 @@
-package main
+package game
 
 import (
 	"bufio"
 	"fmt"
+	"strings"
+
+	"github.com/n7down/ssh-chess/internal/logger"
+	"golang.org/x/crypto/ssh"
 
 	randomData "github.com/Pallinder/go-randomdata"
-	"github.com/n7down/ssh-chess/logger"
-	"golang.org/x/crypto/ssh"
 )
 
 const (
@@ -35,17 +37,19 @@ type GameManager struct {
 	UserCreatedGames map[string]*Game
 	Games            map[string]*Game
 	HandleChannel    chan ssh.Channel
+	logger           logger.Logger
 }
 
-func NewGameManager() *GameManager {
+func NewGameManager(logger logger.Logger) *GameManager {
 	return &GameManager{
 		UserCreatedGames: map[string]*Game{},
 		Games:            map[string]*Game{},
 		HandleChannel:    make(chan ssh.Channel),
+		logger:           logger,
 	}
 }
 
-func (gm *GameManager) GetAvailableGame() *Game {
+func (gm *GameManager) getAvailableGame() *Game {
 	for _, game := range gm.Games {
 		if game.SessionCount() == 1 {
 			return game
@@ -109,41 +113,50 @@ func (gm *GameManager) getUserCreatedGame(gameName string) *Game {
 	return g
 }
 
+func (gm *GameManager) getPlayerAndGameName(username string) (string, string) {
+	if strings.Contains(username, "#") {
+		names := strings.Split(username, "#")
+		playerName := names[0]
+		gameName := names[1]
+		return playerName, gameName
+	}
+	return username, ""
+}
+
 func (gm *GameManager) HandleNewChannel(c ssh.Channel, user string) {
 
-	playerName, gameName := getPlayerAndGameName(user)
+	playerName, gameName := gm.getPlayerAndGameName(user)
 
 	var g *Game
 	if gameName != "" {
-		logger.Debug(fmt.Sprintf("user game name: %s", gameName))
+		gm.logger.Debug(fmt.Sprintf("user game name: %s", gameName))
 		g = gm.getUserCreatedGame(gameName)
 	}
 
 	if g == nil {
-		g = gm.GetAvailableGame()
+		g = gm.getAvailableGame()
 	}
 
 	if g == nil {
-		g = NewGame(gameWidth, gameHeight, randomData.SillyName())
+		g = NewGame(gameWidth, gameHeight, randomData.SillyName(), gm.logger)
 		gm.Games[g.Name] = g
 	}
 	go g.Run()
 
-	session := NewSession(c, g.WorldWidth(), g.WorldHeight(), playerName)
+	session := NewSession(c, g.WorldWidth(), g.WorldHeight(), playerName, gm.logger)
 
 	g.AddSession(session)
 
-	logger.Print(fmt.Sprintf("player connected: %v", playerName))
-	logger.Print(fmt.Sprintf("Player joined. Current stats: %d users, %d games",
-		gm.SessionCount(), gm.GameCount()))
+	gm.logger.Print(fmt.Sprintf("player connected: %v", playerName))
+	gm.logger.Print(fmt.Sprintf("Player joined. Current stats: %d users, %d games", gm.SessionCount(), gm.GameCount()))
 
 	go func() {
 		reader := bufio.NewReader(c)
 		for {
 			r, _, err := reader.ReadRune()
-			logger.Debug(fmt.Sprintf("r: %d", r))
+			gm.logger.Debug(fmt.Sprintf("r: %d", r))
 			if err != nil {
-				logger.Debug(err.Error())
+				gm.logger.Debug(err.Error())
 				break
 			}
 

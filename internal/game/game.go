@@ -1,4 +1,4 @@
-package main
+package game
 
 import (
 	"bytes"
@@ -8,11 +8,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gorilla/websocket"
+	"github.com/n7down/ssh-chess/internal/logger"
+
 	aurora "github.com/logrusorgru/aurora"
-	"github.com/n7down/ssh-chess/logger"
 	chess "github.com/notnil/chess"
-	"github.com/satori/go.uuid"
+	uuid "github.com/satori/go.uuid"
 )
 
 const (
@@ -37,22 +37,23 @@ type Game struct {
 	mutex           sync.RWMutex
 	Model           *chess.Game
 	startTime       time.Time
-	connection      *websocket.Conn
 	id              string
+	logger          logger.Logger
 }
 
-func NewGame(worldWidth, worldHeight int, name string) *Game {
+func NewGame(worldWidth, worldHeight int, name string, logger logger.Logger) *Game {
 	g := &Game{
 		userCreatedGame: false,
 		Name:            name,
 		Redraw:          make(chan struct{}),
 		hub:             NewHub(),
 		Model:           chess.NewGame(chess.UseNotation(chess.LongAlgebraicNotation{})),
+		logger:          logger,
 	}
 
 	id, err := uuid.NewV4()
 	if err != nil {
-		logger.Debug(fmt.Sprintf("error generating uuid: %v", err.Error()))
+		g.logger.Debug(fmt.Sprintf("error generating uuid: %v", err.Error()))
 	}
 	g.id = id.String()
 
@@ -80,7 +81,7 @@ func NewUserCreatedGame(worldWidth, worldHeight int, name string) *Game {
 
 	id, err := uuid.NewV4()
 	if err != nil {
-		logger.Debug(fmt.Sprintf("error generating uuid: %v", err.Error()))
+		g.logger.Debug(fmt.Sprintf("error generating uuid: %v", err.Error()))
 	}
 	g.id = id.String()
 
@@ -621,7 +622,7 @@ func (g *Game) players() map[*Player]*Session {
 
 func (g *Game) CheckGameState() {
 
-	logger.Debug("checking game state")
+	g.logger.Debug("checking game state")
 
 	var err error
 	if g.Model.Outcome() != chess.NoOutcome {
@@ -638,7 +639,7 @@ func (g *Game) CheckGameState() {
 	}
 
 	if err != nil {
-		logger.Debug(fmt.Sprintf("error sending data: %v", err.Error()))
+		g.logger.Debug(fmt.Sprintf("error sending data: %v", err.Error()))
 	}
 }
 
@@ -838,32 +839,10 @@ func (g *Game) startGame() {
 
 	for player := range g.players() {
 		//fmt.Println(fmt.Sprintf("random bool: %v", randomBool))
-		logger.Debug(fmt.Sprintf("random bool: %v", randomBool))
+		g.logger.Debug(fmt.Sprintf("random bool: %v", randomBool))
 		player.SetIsActive(randomBool)
 		randomBool = !randomBool
 	}
-
-	/* // TODO: make connection to websocket*/
-	//recorderUrl := getEnv("RECORDER_HOST", "localhost")
-	////host := fmt.Sprintf("%s:8000", recorderUrl)
-	//host := recorderUrl + ":8000"
-
-	//u := url.URL{
-	//Scheme: "ws",
-	//Host:   host,
-	//Path:   "/record",
-	//}
-
-	//fmt.Println(fmt.Sprintf("host: %s", host))
-	//fmt.Println(fmt.Sprintf("connecting to %s", u.String()))
-
-	//var err error
-	//g.connection, _, err = websocket.DefaultDialer.Dial(u.String(), nil)
-	//if err != nil {
-	//fmt.Println("dial: ", err)
-	//} else {
-	//fmt.Println("connected to recorder: " + host)
-	/*}*/
 
 	g.startTime = time.Now()
 }
@@ -898,7 +877,7 @@ func (g *Game) Run() {
 			g.Redraw <- struct{}{}
 
 			if g.started == false && len(g.players()) > 1 {
-				logger.Debug("starting game")
+				g.logger.Debug("starting game")
 
 				// start the game
 				g.startGame()
@@ -933,11 +912,6 @@ func (g *Game) Render(s *Session) {
 
 func (g *Game) AddSession(s *Session) {
 	g.hub.Register <- s
-}
-
-type UnregisterMessage struct {
-	session *Session
-	message string
 }
 
 func (g *Game) RemoveSession(s *Session, msg string) {

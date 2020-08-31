@@ -1,12 +1,11 @@
-package main
+package game
 
 import (
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/cznic/mathutil"
-	"github.com/n7down/ssh-chess/logger"
+	"github.com/n7down/ssh-chess/internal/logger"
 	"github.com/notnil/chess"
 )
 
@@ -28,15 +27,6 @@ const (
 	KeyNone
 )
 
-// TODO: move this to a different file
-func getenv(key, fallback string) string {
-	value := os.Getenv(key)
-	if len(value) == 0 {
-		return fallback
-	}
-	return value
-}
-
 type Player struct {
 	s                     *Session
 	Name                  string
@@ -49,9 +39,10 @@ type Player struct {
 	currentKeyState       KeyState
 	previousKeyState      KeyState
 	TakenPiecesList       []string
+	logger                logger.Logger
 }
 
-func NewPlayer(s *Session, worldWidth, worldHeight int, playerName string) *Player {
+func NewPlayer(s *Session, worldWidth, worldHeight int, playerName string, logger logger.Logger) *Player {
 	isActive := false
 
 	player := &Player{
@@ -66,6 +57,7 @@ func NewPlayer(s *Session, worldWidth, worldHeight int, playerName string) *Play
 		currentKeyState:       KeyNone,
 		previousKeyState:      KeyNone,
 		TakenPiecesList:       []string{},
+		logger:                logger,
 	}
 
 	// FIXME: add player to database if it doesnt exist
@@ -184,35 +176,35 @@ func (p *Player) Update(g *Game, delta float64) {
 		if p.IsActive {
 			p.BoardPosition.y--
 			p.BoardPosition.x, p.BoardPosition.y = mathutil.Clamp(p.BoardPosition.x, 0, 7), mathutil.Clamp(p.BoardPosition.y, 0, 7)
-			logger.Debug(fmt.Sprintf("x: %d y: %d", p.BoardPosition.x, p.BoardPosition.y))
+			p.logger.Debug(fmt.Sprintf("x: %d y: %d", p.BoardPosition.x, p.BoardPosition.y))
 		}
 
 	case KeyDown:
 		if p.IsActive {
 			p.BoardPosition.y++
 			p.BoardPosition.x, p.BoardPosition.y = mathutil.Clamp(p.BoardPosition.x, 0, 7), mathutil.Clamp(p.BoardPosition.y, 0, 7)
-			logger.Debug(fmt.Sprintf("x: %d y: %d", p.BoardPosition.x, p.BoardPosition.y))
+			p.logger.Debug(fmt.Sprintf("x: %d y: %d", p.BoardPosition.x, p.BoardPosition.y))
 		}
 
 	case KeyRight:
 		if p.IsActive {
 			p.BoardPosition.x++
 			p.BoardPosition.x, p.BoardPosition.y = mathutil.Clamp(p.BoardPosition.x, 0, 7), mathutil.Clamp(p.BoardPosition.y, 0, 7)
-			logger.Debug(fmt.Sprintf("x: %d y: %d", p.BoardPosition.x, p.BoardPosition.y))
+			p.logger.Debug(fmt.Sprintf("x: %d y: %d", p.BoardPosition.x, p.BoardPosition.y))
 		}
 
 	case KeyLeft:
 		if p.IsActive {
 			p.BoardPosition.x--
 			p.BoardPosition.x, p.BoardPosition.y = mathutil.Clamp(p.BoardPosition.x, 0, 7), mathutil.Clamp(p.BoardPosition.y, 0, 7)
-			logger.Debug(fmt.Sprintf("x: %d y: %d", p.BoardPosition.x, p.BoardPosition.y))
+			p.logger.Debug(fmt.Sprintf("x: %d y: %d", p.BoardPosition.x, p.BoardPosition.y))
 		}
 
 	case KeyAction:
 
 		if p.IsActive && p.PlayerState == SelectingPiece {
 			p.SelectedPiecePosition.x, p.SelectedPiecePosition.y = p.BoardPosition.x, p.BoardPosition.y
-			logger.Debug(fmt.Sprintf("selected piece: %v  x: %d y: %d",
+			p.logger.Debug(fmt.Sprintf("selected piece: %v  x: %d y: %d",
 				g.board[p.SelectedPiecePosition.x][p.SelectedPiecePosition.y],
 				p.SelectedPiecePosition.x,
 				p.SelectedPiecePosition.y))
@@ -221,12 +213,12 @@ func (p *Player) Update(g *Game, delta float64) {
 			pieceToMove := g.board[p.SelectedPiecePosition.x][p.SelectedPiecePosition.y]
 			if p.canMovePiece(pieceToMove) {
 				p.PlayerState = PlacingPiece
-				logger.Debug("piece selected - in placing piece state")
+				p.logger.Debug("piece selected - in placing piece state")
 
 				// display the valid moves
 				validMoves := g.Model.ValidMoves()
 				validPositions := p.getVaildPositionsForSelectedPiece(validMoves)
-				logger.Debug(fmt.Sprintf("valid positions: %v", validPositions))
+				p.logger.Debug(fmt.Sprintf("valid positions: %v", validPositions))
 			}
 
 		} else if p.IsActive && p.SelectedPiecePosition.x == p.BoardPosition.x &&
@@ -235,7 +227,7 @@ func (p *Player) Update(g *Game, delta float64) {
 
 			p.SelectedPiecePosition = &Position{-1, -1}
 			p.PlayerState = SelectingPiece
-			logger.Debug("putting piece back - in selecting piece state")
+			p.logger.Debug("putting piece back - in selecting piece state")
 
 		} else if p.IsActive && p.PlayerState == PlacingPiece {
 			validMoves := g.Model.ValidMoves()
@@ -243,9 +235,9 @@ func (p *Player) Update(g *Game, delta float64) {
 			positionIsValid := p.positionInList(validPositions)
 			if positionIsValid {
 
-				logger.Debug(fmt.Sprintf("selected piece x: %d y: %d", p.SelectedPiecePosition.x, p.SelectedPiecePosition.y))
+				p.logger.Debug(fmt.Sprintf("selected piece x: %d y: %d", p.SelectedPiecePosition.x, p.SelectedPiecePosition.y))
 
-				logger.Debug(fmt.Sprintf("moving piece x: %d y: %d to x: %d y: %d - in selecting piece state",
+				p.logger.Debug(fmt.Sprintf("moving piece x: %d y: %d to x: %d y: %d - in selecting piece state",
 					p.SelectedPiecePosition.x,
 					p.SelectedPiecePosition.y,
 					p.BoardPosition.x,
@@ -253,9 +245,9 @@ func (p *Player) Update(g *Game, delta float64) {
 
 				pieceToTake := g.board[p.BoardPosition.x][p.BoardPosition.y]
 				if p.canTakePiece(pieceToTake) {
-					logger.Debug(fmt.Sprintf("taking piece: %s", pieceToTake))
+					p.logger.Debug(fmt.Sprintf("taking piece: %s", pieceToTake))
 					p.TakenPiecesList = append(p.TakenPiecesList, pieceToTake)
-					logger.Debug(fmt.Sprintf("taken list: %v", p.TakenPiecesList))
+					p.logger.Debug(fmt.Sprintf("taken list: %v", p.TakenPiecesList))
 				}
 
 				selectedPiece := g.board[p.SelectedPiecePosition.x][p.SelectedPiecePosition.y]
@@ -267,10 +259,10 @@ func (p *Player) Update(g *Game, delta float64) {
 				selectedPieceModel := p.SelectedPiecePosition.positionToModel()
 				boardPositionModel := p.BoardPosition.positionToModel()
 				moveStr := selectedPieceModel + boardPositionModel
-				logger.Debug(fmt.Sprintf("move string: " + moveStr))
+				p.logger.Debug(fmt.Sprintf("move string: " + moveStr))
 				g.Model.MoveStr(moveStr)
 
-				logger.Debug(g.Model.Position().Board().Draw())
+				p.logger.Debug(g.Model.Position().Board().Draw())
 
 				g.CheckGameState()
 				g.SwitchPlayersIsActive()

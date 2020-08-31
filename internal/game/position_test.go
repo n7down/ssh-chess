@@ -1,9 +1,10 @@
-package main
+package game
 
 import (
-	"github.com/stretchr/testify/assert"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 //     A      B      C      D      E      F      G      H

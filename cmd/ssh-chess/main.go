@@ -4,13 +4,15 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net"
-	"strings"
+	"os"
 
-	"github.com/n7down/ssh-chess/logger"
+	"github.com/n7down/ssh-chess/internal/game"
+	"github.com/n7down/ssh-chess/internal/logger"
+	"github.com/n7down/ssh-chess/internal/logger/logruslogger"
 	"golang.org/x/crypto/ssh"
 )
 
-func handler(conn net.Conn, gm *GameManager, config *ssh.ServerConfig) {
+func handler(conn net.Conn, gm *game.GameManager, config *ssh.ServerConfig, logger logger.Logger) {
 	// Before use, a handshake must be performed on the incoming
 	// net.Conn.
 	sshConn, chans, reqs, err := ssh.NewServerConn(conn, config)
@@ -75,21 +77,11 @@ func handler(conn net.Conn, gm *GameManager, config *ssh.ServerConfig) {
 	}
 }
 
-func getPlayerAndGameName(username string) (string, string) {
-	if strings.Contains(username, "#") {
-		names := strings.Split(username, "#")
-		playerName := names[0]
-		gameName := names[1]
-		return playerName, gameName
-	}
-	return username, ""
-}
-
 func main() {
-	InitializeSettings()
-	logger.InitializeLogs(GameSettings.DebugMode)
+	game.InitializeSettings()
 
-	sshPort := ":2022"
+	// sshPort := ":2022"
+	port := os.Getenv("PORT")
 
 	config := &ssh.ServerConfig{
 		NoClientAuth: true,
@@ -107,15 +99,15 @@ func main() {
 
 	config.AddHostKey(private)
 
-	// Create the GameManager
-	gm := NewGameManager()
+	// logger
+	logger := logruslogger.NewLogrusLogger(true)
 
-	fmt.Printf(
-		"Listening on port %s for SSH...\n",
-		sshPort,
-	)
+	// create the GameManager
+	gm := game.NewGameManager(logger)
 
-	listener, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0%s", sshPort))
+	fmt.Printf("Listening on port %s for SSH...\n", port)
+
+	listener, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%s", port))
 	if err != nil {
 		panic("failed to listen for connection")
 	}
@@ -126,6 +118,6 @@ func main() {
 			panic("failed to accept incoming connection")
 		}
 
-		go handler(nConn, gm, config)
+		go handler(nConn, gm, config, logger)
 	}
 }

@@ -1,8 +1,9 @@
-package main
+package game
 
 import (
 	"time"
 
+	"github.com/n7down/ssh-chess/internal/logger"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -12,18 +13,23 @@ type Session struct {
 	LastAction time.Time
 	HighScore  int
 	Player     *Player
+	logger     logger.Logger
 }
 
-func NewSession(c ssh.Channel, worldWidth, worldHeight int, playerName string) *Session {
+func NewSession(c ssh.Channel, worldWidth, worldHeight int, playerName string, logger logger.Logger) *Session {
 
-	s := Session{c: c, LastAction: time.Now()}
+	s := Session{
+		c:          c,
+		LastAction: time.Now(),
+		logger:     logger,
+	}
 	s.newGame(worldWidth, worldHeight, playerName)
 
 	return &s
 }
 
 func (s *Session) newGame(worldWidth, worldHeight int, playerName string) {
-	s.Player = NewPlayer(s, worldWidth, worldHeight, playerName)
+	s.Player = NewPlayer(s, worldWidth, worldHeight, playerName, s.logger)
 }
 
 func (s *Session) didAction() {

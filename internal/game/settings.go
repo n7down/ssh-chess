@@ -1,8 +1,7 @@
-package main
+package game
 
 import (
 	"flag"
-	//"fmt"
 )
 
 type Settings struct {
@@ -17,10 +16,6 @@ func InitializeSettings() {
 	debugMode := flag.Bool("d", false, "show debug logs")
 
 	flag.Parse()
-
-	//fmt.Println(fmt.Sprintf("disable recorder: %v", *disableRecorder))
-	//fmt.Println(fmt.Sprintf("single player mode: %v", *singlePlayerMode))
-	//fmt.Println(fmt.Sprintf("show debug logs: %v", *debugMode))
 
 	s := Settings{
 		DisableGameRecorder: *disableRecorder,
