@@ -5,20 +5,11 @@ services:
     container_name: app
     build: 
       context: .
-      dockerfile: dockerfiles/app/Dockerfile
+      dockerfile: build/dockerfiles/ssh-chess/Dockerfile
     environment:
-        - RECORDER_HOST=172.28.0.3
+      - PORT=2022
     ports:
       - "2022:2022"
-    networks:
-      net:
-        ipv4_address: 172.28.0.4
-
-  db:
-    container_name: db
-    build: dockerfiles/db/.
-    ports:
-      - "5432:5432"
     networks:
       net:
         ipv4_address: 172.28.0.2

@@ -78,9 +78,6 @@ func handler(conn net.Conn, gm *game.GameManager, config *ssh.ServerConfig, logg
 }
 
 func main() {
-	game.InitializeSettings()
-
-	// sshPort := ":2022"
 	port := os.Getenv("PORT")
 
 	config := &ssh.ServerConfig{

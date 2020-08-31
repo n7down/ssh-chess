@@ -18,7 +18,7 @@ RUN CGO_ENABLED=0 go build -o /usr/bin/ssh-chess *.go
 WORKDIR $GOPATH/bin
 RUN apt install -y openssh-client && ssh-keygen -t rsa -N "" -f id_rsa
 
-CMD ["ssh-chess", "-d"]
+CMD ["ssh-chess"]
 
 #FROM golang:latest as builder 
 #WORKDIR $GOPATH/src/github.com/n7down/ssh-chess
