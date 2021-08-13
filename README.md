@@ -1,6 +1,8 @@
 # ssh-chess
 ssh-chess is a chess server that runs through the SSH protocol
 
+![](assets/screenshot.png)
+
 ## Getting Started
 1. Clone this project and `cd` into it
 2. Run `ssh-keygen -t rsa -f id_rsa` to create a RSA public/private keypair in the current directory for the server to use. Do not give it a passphrase
