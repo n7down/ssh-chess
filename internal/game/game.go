@@ -59,10 +59,7 @@ func NewGame(worldWidth, worldHeight int, name string, logger logger.Logger) *Ga
 		logger:          logger,
 	}
 
-	id, err := uuid.NewV4()
-	if err != nil {
-		g.logger.Debug(fmt.Sprintf("error generating uuid: %v", err.Error()))
-	}
+	id := uuid.NewV4()
 	g.id = id.String()
 
 	g.mutex = sync.RWMutex{}
@@ -87,10 +84,7 @@ func NewUserCreatedGame(worldWidth, worldHeight int, name string) *Game {
 		Model:           chess.NewGame(chess.UseNotation(chess.LongAlgebraicNotation{})),
 	}
 
-	id, err := uuid.NewV4()
-	if err != nil {
-		g.logger.Debug(fmt.Sprintf("error generating uuid: %v", err.Error()))
-	}
+	id := uuid.NewV4()
 	g.id = id.String()
 
 	g.mutex = sync.RWMutex{}
